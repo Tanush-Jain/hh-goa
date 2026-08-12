@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { WalletPass } from './components/WalletPass';
+import { WalletPass, OceanPanel } from './components/WalletPass';
 import { processImageFile } from './utils/heic';
 import { drawCard } from './utils/canvasDrawer';
 
@@ -238,17 +238,13 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: '#084d2a', color: '#F5F0E0' }}>
+    <div className="min-h-screen relative overflow-hidden" style={{ background: '#0a140d', color: '#faf5e4' }}>
 
-      {/* ── Left Palm Tree ── */}
-      <div className="fixed left-0 bottom-0 pointer-events-none select-none hidden lg:block" style={{ zIndex: 0, width: 260, height: '100vh' }}>
-        <PalmTree flip={false} />
-      </div>
+      {/* ── Left Ocean Panel (palm + waves + Urrak/Feni) ── */}
+      <OceanPanel side="left" />
 
-      {/* ── Right Palm Tree ── */}
-      <div className="fixed right-0 bottom-0 pointer-events-none select-none hidden lg:block" style={{ zIndex: 0, width: 260, height: '100vh' }}>
-        <PalmTree flip={true} />
-      </div>
+      {/* ── Right Ocean Panel (mirrored) ── */}
+      <OceanPanel side="right" />
 
       {/* Main content above palms */}
       <div className="relative" style={{ zIndex: 1 }}>
@@ -288,126 +284,6 @@ export function App() {
   );
 }
 
-/**
- * HH Goa style palm tree SVG — white trunk, dark green layered fronds, yellow outlines.
- * flip=true mirrors it for the right side.
- */
-function PalmTree({ flip }) {
-  return (
-    <svg
-      viewBox="0 0 260 700"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        left: flip ? 'auto' : 0,
-        right: flip ? 0 : 'auto',
-        width: '100%',
-        height: '100%',
-        transform: flip ? 'scaleX(-1)' : 'none',
-        opacity: 0.92,
-      }}
-    >
-      {/* ─── Trunk ─────────────────────────────────────── */}
-      {/* Main white trunk body — slightly curved */}
-      <path
-        d="M 100 700 C 108 580, 95 460, 115 340 C 125 270, 135 200, 145 140"
-        fill="none"
-        stroke="#FFFFFF"
-        strokeWidth="28"
-        strokeLinecap="round"
-      />
-      {/* Yellow trunk outline (left) */}
-      <path
-        d="M 100 700 C 108 580, 95 460, 115 340 C 125 270, 135 200, 145 140"
-        fill="none"
-        stroke="#fee101"
-        strokeWidth="32"
-        strokeLinecap="round"
-        opacity="0.35"
-      />
-      {/* Dark green trunk centre-line texture */}
-      <path
-        d="M 104 700 C 112 580, 99 460, 119 340 C 129 270, 139 200, 149 140"
-        fill="none"
-        stroke="#0b6839"
-        strokeWidth="10"
-        strokeLinecap="round"
-        opacity="0.5"
-      />
 
-      {/* ─── Frond Layer 1 (lowest / widest) ─────────── */}
-      <g transform="translate(145,140) rotate(-10)">
-        {/* Big sweep left */}
-        <path d="M 0 0 C -40 -20, -100 10, -160 -10 C -120 -30, -60 -40, 0 0 Z"
-          fill="#1a6b3a" stroke="#fee101" strokeWidth="2" />
-        {/* Big sweep right */}
-        <path d="M 0 0 C 40 -20, 90 -10, 130 -40 C 90 -50, 40 -35, 0 0 Z"
-          fill="#1a6b3a" stroke="#fee101" strokeWidth="2" />
-        {/* Sweep down-left */}
-        <path d="M 0 0 C -30 20, -80 50, -110 80 C -75 55, -30 25, 0 0 Z"
-          fill="#0b6839" stroke="#fee101" strokeWidth="2" />
-        {/* Sweep down-right */}
-        <path d="M 0 0 C 30 20, 70 55, 90 90 C 60 60, 25 28, 0 0 Z"
-          fill="#0b6839" stroke="#fee101" strokeWidth="2" />
-      </g>
-
-      {/* ─── Frond Layer 2 (upper) ─────────────────────── */}
-      <g transform="translate(145,140) rotate(5)">
-        {/* Far left sweep */}
-        <path d="M 0 0 C -50 -30, -120 -20, -180 -50 C -130 -55, -60 -45, 0 0 Z"
-          fill="#22874a" stroke="#fee101" strokeWidth="1.5" />
-        {/* Far right sweep */}
-        <path d="M 0 0 C 55 -25, 110 -45, 155 -80 C 110 -70, 55 -40, 0 0 Z"
-          fill="#22874a" stroke="#fee101" strokeWidth="1.5" />
-        {/* Upper-left */}
-        <path d="M 0 0 C -20 -50, -50 -100, -60 -150 C -40 -105, -15 -55, 0 0 Z"
-          fill="#1a6b3a" stroke="#fee101" strokeWidth="1.5" />
-        {/* Upper-right */}
-        <path d="M 0 0 C 20 -45, 45 -95, 50 -140 C 35 -98, 15 -50, 0 0 Z"
-          fill="#1a6b3a" stroke="#fee101" strokeWidth="1.5" />
-        {/* Straight up */}
-        <path d="M 0 0 C 0 -50, 5 -110, 10 -160 C 5 -112, 0 -55, 0 0 Z"
-          fill="#22874a" stroke="#fee101" strokeWidth="1.5" />
-      </g>
-
-      {/* ─── Crown leaf tips (top spray) ──────────────── */}
-      <g transform="translate(145,140)">
-        <ellipse cx="-15" cy="-170" rx="14" ry="7" fill="#22874a" stroke="#fee101" strokeWidth="1.5" transform="rotate(-25,-15,-170)" />
-        <ellipse cx="15"  cy="-175" rx="14" ry="7" fill="#22874a" stroke="#fee101" strokeWidth="1.5" transform="rotate(15,15,-175)" />
-        <ellipse cx="0"   cy="-180" rx="12" ry="6" fill="#2a9e58" stroke="#fee101" strokeWidth="1.5" />
-        <ellipse cx="-35" cy="-158" rx="16" ry="6" fill="#1a6b3a" stroke="#fee101" strokeWidth="1.5" transform="rotate(-35,-35,-158)" />
-        <ellipse cx="40"  cy="-155" rx="16" ry="6" fill="#1a6b3a" stroke="#fee101" strokeWidth="1.5" transform="rotate(30,40,-155)" />
-      </g>
-
-      {/* ─── Coconuts ─────────────────────────────────── */}
-      <circle cx="138" cy="150" r="9"  fill="#3d2008" stroke="#fee101" strokeWidth="1.5" />
-      <circle cx="153" cy="155" r="8"  fill="#3d2008" stroke="#fee101" strokeWidth="1.5" />
-      <circle cx="145" cy="162" r="7"  fill="#3d2008" stroke="#fee101" strokeWidth="1.5" />
-
-      {/* ─── Pink flower / ground decoration ─────────── */}
-      <g transform="translate(60, 680)">
-        {[-60,-30,0,30,60].map((x,i) => (
-          <g key={i} transform={`translate(${x},0)`}>
-            <circle cx="0" cy="-12" r="8" fill="#e8357a" opacity="0.85" />
-            <circle cx="0" cy="0"   r="5" fill="#fee101" />
-          </g>
-        ))}
-      </g>
-
-      {/* ─── Ground grass blades ─────────────────────── */}
-      {[-40,-20,0,20,40,60,80,100,120].map((x,i) => (
-        <path key={i}
-          d={`M ${x+20} 700 C ${x+10} 670, ${x+30} 650, ${x+20} 630`}
-          fill="none"
-          stroke="#0d7d44"
-          strokeWidth="4"
-          strokeLinecap="round"
-          opacity="0.7"
-        />
-      ))}
-    </svg>
-  );
-}
 
 export default App;
