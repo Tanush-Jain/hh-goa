@@ -1,222 +1,152 @@
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Upload, Download, Share2, RefreshCw, Sparkles, Check, 
-  Image as ImageIcon, QrCode, Layers, Frame, FileImage, 
-  Calendar, Camera, Zap, ShieldCheck, ExternalLink, UserCheck
+import {
+  Upload, Download, Share2, RefreshCw, Sparkles, Check,
+  QrCode, Layers, Frame, FileImage,
+  Calendar, Camera, Zap, ShieldCheck, ExternalLink, UserCheck, Image as ImageIcon
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { STACK_OPTIONS, FUN_VIBES, getBuilderTitle } from '../utils/titles';
 
+// ── HH Goa 2026 Colours (exact brand) ─────────────────────────────
+const HH = {
+  green:      '#0b6839',  // HH Goa official green
+  greenDark:  '#084d2a',  // darker shade
+  greenMid:   '#0d7d44',  // mid for layering
+  yellow:     '#fee101',  // HH Goa official yellow
+  pink:       '#E8357A',  // hot pink accent
+  black:      '#0F0F0F',
+  cream:      '#F5F0E0',
+};
+
+// Preset quick-avatars
 const PRESET_AVATARS = [
-  { id: 'sunset', name: 'Sunset Nomad', emoji: '🌴', gradient: 'from-[#F5A623] via-[#FF5E4D] to-[#0A3D4A]' },
-  { id: 'cyber', name: 'Onchain Dev', emoji: '⚡', gradient: 'from-[#00E5A0] via-[#0A3D4A] to-[#141824]' },
-  { id: 'model', name: 'AI Whisperer', emoji: '🤖', gradient: 'from-[#FF5E4D] via-[#F5A623] to-[#0D0F1A]' }
+  { id: 'sunset', name: 'Goa Sunset', emoji: '🌴', g1: '#E8C84A', g2: '#E8357A' },
+  { id: 'cyber',  name: 'Build Mode', emoji: '⚡', g1: '#3A7A3C', g2: '#E8C84A' },
+  { id: 'hacker', name: 'Night Ship', emoji: '🛠️',  g1: '#E8357A', g2: '#1E4220' }
 ];
 
-function generatePresetAvatarUrl(preset) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 400;
-  canvas.height = 400;
-  const ctx = canvas.getContext('2d');
-  
-  const grad = ctx.createLinearGradient(0, 0, 400, 400);
-  if (preset.id === 'sunset') {
-    grad.addColorStop(0, '#F5A623');
-    grad.addColorStop(0.5, '#FF5E4D');
-    grad.addColorStop(1, '#0A3D4A');
-  } else if (preset.id === 'cyber') {
-    grad.addColorStop(0, '#00E5A0');
-    grad.addColorStop(0.5, '#0A3D4A');
-    grad.addColorStop(1, '#141824');
-  } else {
-    grad.addColorStop(0, '#FF5E4D');
-    grad.addColorStop(0.5, '#F5A623');
-    grad.addColorStop(1, '#0D0F1A');
-  }
-  ctx.fillStyle = grad;
+function generatePresetDataUrl(preset) {
+  const c = document.createElement('canvas');
+  c.width = 400; c.height = 400;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 400, 400);
+  g.addColorStop(0, preset.g1);
+  g.addColorStop(1, preset.g2);
+  ctx.fillStyle = g;
   ctx.fillRect(0, 0, 400, 400);
-
-  ctx.fillStyle = '#E8EAF0';
   ctx.font = 'bold 160px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(preset.emoji, 200, 200);
-
-  return canvas.toDataURL('image/png');
+  return c.toDataURL('image/png');
 }
 
-const containerVariants = {
+const container = {
   hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.5,
-      ease: [0.16, 1, 0.3, 1],
-      staggerChildren: 0.08
-    }
-  }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1], staggerChildren: 0.07 } }
 };
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 12 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { type: 'spring', stiffness: 350, damping: 25 }
-  }
+const item = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 340, damping: 26 } }
 };
 
 export function WalletPass({
-  imageObj,
-  previewUrl,
-  name,
-  setName,
-  stack,
-  setStack,
-  funVibe,
-  setFunVibe,
-  cardMode,
-  setCardMode,
-  fileFormat,
-  setFileFormat,
-  onImageSelected,
-  onDownload,
-  onOpenInNewTab,
-  onShare,
-  onReset,
-  isProcessing,
-  downloadSuccess,
-  errorMsg
+  previewUrl, name, setName, stack, setStack, funVibe, setFunVibe,
+  cardMode, setCardMode, fileFormat, setFileFormat,
+  onImageSelected, onDownload, onOpenInNewTab, onShare, onReset,
+  isProcessing, downloadSuccess, errorMsg
 }) {
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const triggerConfetti = () => {
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.8 },
-      colors: ['#F5A623', '#FF5E4D', '#00E5A0', '#E8EAF0']
-    });
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-  };
+  const boom = () => confetti({
+    particleCount: 55, spread: 65, origin: { y: 0.82 },
+    colors: [HH.yellow, HH.pink, '#ffffff', HH.cream]
+  });
 
   const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     setIsDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      onImageSelected(e.dataTransfer.files[0]);
-      triggerConfetti();
-    }
+    const f = e.dataTransfer.files?.[0];
+    if (f) { onImageSelected(f); boom(); }
   };
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      onImageSelected(e.target.files[0]);
-      triggerConfetti();
-    }
+  const handleFile = (e) => {
+    const f = e.target.files?.[0];
+    if (f) { onImageSelected(f); boom(); e.target.value = ''; }
   };
 
-  const handleSelectPreset = (preset) => {
-    const dataUrl = generatePresetAvatarUrl(preset);
+  const handlePreset = (preset) => {
+    const url = generatePresetDataUrl(preset);
     const img = new Image();
-    img.onload = () => {
-      onImageSelected(null, { img, dataUrl });
-      triggerConfetti();
-    };
-    img.src = dataUrl;
+    img.onload = () => { onImageSelected(null, { img, dataUrl: url }); boom(); };
+    img.src = url;
   };
 
   return (
-    <main className="w-full max-w-[460px] mx-auto min-h-screen px-4 py-8 flex flex-col justify-center items-center relative overflow-hidden">
-      {/* Background Ambient Radial Glows */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#F5A623]/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-[#FF5E4D]/10 blur-[100px] rounded-full pointer-events-none" />
+    <main
+      className="w-full max-w-[480px] mx-auto min-h-screen px-4 py-8 flex flex-col justify-center items-center relative"
+      style={{ background: `linear-gradient(160deg, ${HH.greenDark} 0%, ${HH.green} 60%, ${HH.greenMid} 100%)` }}
+    >
+      {/* Ambient glow blobs */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${HH.yellow}1A 0%, transparent 70%)` }} />
+      <div className="absolute bottom-1/4 right-0 w-64 h-64 rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${HH.pink}18 0%, transparent 70%)` }} />
 
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="w-full relative z-10"
-      >
-        {/* App Branding Header */}
-        <motion.div variants={itemVariants} className="text-center mb-6">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F5A623]/10 border border-[#F5A623]/30 text-[#F5A623] text-xs font-mono-custom mb-3">
+      <motion.div variants={container} initial="hidden" animate="visible" className="w-full relative z-10">
+
+        {/* ── App Header ── */}
+        <motion.div variants={item} className="text-center mb-5">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-mono-custom font-bold uppercase tracking-widest mb-3"
+            style={{ background: `${HH.yellow}22`, borderColor: `${HH.yellow}55`, color: HH.yellow }}>
             <Zap className="w-3.5 h-3.5 animate-pulse" />
-            HH GOA 2026 OFFICIAL
+            Hacker House GOA 2026
           </div>
-          <h1 className="font-display-custom text-3xl font-extrabold tracking-tight text-[#E8EAF0] flex items-center justify-center gap-2">
+          <h1 className="font-display-custom text-3xl font-extrabold tracking-tight" style={{ color: HH.cream }}>
             BUILDER CREDENTIAL
           </h1>
-          <p className="text-xs font-mono-custom text-[#E8EAF0]/60 mt-1">
-            Generate your official event card & X profile frame
+          <p className="text-xs font-mono-custom mt-1" style={{ color: `${HH.cream}99` }}>
+            Generate your event card &amp; X profile frame
           </p>
         </motion.div>
 
-        {/* Format Selector Toggle (Builder Pass vs PFP Frame) */}
-        <motion.div 
-          variants={itemVariants} 
-          className="w-full bg-[#141824]/90 p-1.5 rounded-2xl border border-white/10 flex gap-1.5 mb-5 backdrop-blur-xl shadow-xl"
+        {/* ── Format Toggle ── */}
+        <motion.div variants={item}
+          className="w-full p-1.5 rounded-2xl flex gap-1.5 mb-4 border"
+          style={{ background: `${HH.black}cc`, borderColor: `${HH.yellow}30` }}
         >
-          <button
-            type="button"
-            onClick={() => setCardMode('pass')}
-            className={`flex-1 py-2.5 px-3 rounded-xl font-mono-custom text-xs font-bold flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
-              cardMode === 'pass'
-                ? 'bg-gradient-to-r from-[#F5A623] to-[#F5A623]/90 text-[#0D0F1A] shadow-lg shadow-[#F5A623]/25 scale-[1.02]'
-                : 'text-[#E8EAF0]/60 hover:text-[#E8EAF0] hover:bg-white/5'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            Format A: Builder Pass
-          </button>
-          <button
-            type="button"
-            onClick={() => setCardMode('frame')}
-            className={`flex-1 py-2.5 px-3 rounded-xl font-mono-custom text-xs font-bold flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
-              cardMode === 'frame'
-                ? 'bg-gradient-to-r from-[#FF5E4D] to-[#FF5E4D]/90 text-white shadow-lg shadow-[#FF5E4D]/25 scale-[1.02]'
-                : 'text-[#E8EAF0]/60 hover:text-[#E8EAF0] hover:bg-white/5'
-            }`}
-          >
-            <Frame className="w-3.5 h-3.5" />
-            Format B: PFP Frame
-          </button>
+          {[
+            { id: 'pass',  icon: <Layers className="w-3.5 h-3.5" />,  label: 'Format A: Builder Pass', active: HH.yellow, textActive: HH.black },
+            { id: 'frame', icon: <Frame className="w-3.5 h-3.5" />,   label: 'Format B: PFP Frame',    active: HH.pink,   textActive: '#fff' }
+          ].map(f => (
+            <button key={f.id} type="button" onClick={() => setCardMode(f.id)}
+              className="flex-1 py-2.5 px-2 rounded-xl font-mono-custom text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer"
+              style={cardMode === f.id
+                ? { background: f.active, color: f.textActive, boxShadow: `0 4px 18px ${f.active}55` }
+                : { background: 'transparent', color: `${HH.cream}66` }
+              }>
+              {f.icon}{f.label}
+            </button>
+          ))}
         </motion.div>
 
-        {/* Floating Glassmorphic Pass Container */}
-        <motion.div 
-          variants={itemVariants}
-          layout
-          transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-          className="w-full bg-[#141824]/90 border border-[#F5A623]/25 rounded-[28px] p-6 shadow-2xl shadow-black/80 relative overflow-hidden backdrop-blur-xl"
+        {/* ── Main Card ── */}
+        <motion.div variants={item} layout
+          className="w-full rounded-[26px] p-5 border relative overflow-hidden"
+          style={{ background: `${HH.greenDark}ee`, borderColor: `${HH.yellow}50`, backdropFilter: 'blur(16px)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}
         >
-          {/* Header Bar */}
-          <div className="flex items-center justify-between border-b border-[#E8EAF0]/10 pb-4 mb-5">
+          {/* Card header */}
+          <div className="flex items-center justify-between border-b pb-4 mb-4" style={{ borderColor: `${HH.yellow}22` }}>
             <div className="flex items-center gap-2">
               <span className="text-xl">🌴</span>
               <div>
-                <span className="font-display-custom font-bold text-sm tracking-wider text-[#E8EAF0] block">
-                  HH GOA 2026
-                </span>
-                <span className="font-mono-custom text-[10px] text-[#E8EAF0]/50 block">AUG 14-16 · GOA</span>
+                <p className="font-display-custom font-bold text-sm" style={{ color: HH.cream }}>HACKER HOUSE GOA</p>
+                <p className="font-mono-custom text-[10px]" style={{ color: `${HH.cream}55` }}>28–31 OCT 2026 · GOA, INDIA</p>
               </div>
             </div>
-            <div className="px-3 py-1 rounded-full bg-[#00E5A0]/10 border border-[#00E5A0]/30 text-[#00E5A0] text-[11px] font-mono-custom font-bold uppercase tracking-wider flex items-center gap-1.5">
+            <div className="px-3 py-1 rounded-full font-mono-custom text-[11px] font-bold uppercase flex items-center gap-1.5"
+              style={{ background: `${HH.yellow}20`, border: `1px solid ${HH.yellow}50`, color: HH.yellow }}>
               <UserCheck className="w-3 h-3" />
               {cardMode === 'pass' ? 'EVENT BADGE' : 'PFP FRAME'}
             </div>
@@ -225,343 +155,239 @@ export function WalletPass({
           {/* Error Banner */}
           <AnimatePresence>
             {errorMsg && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="mb-4 bg-[#FF5E4D]/15 border border-[#FF5E4D]/40 text-[#FF5E4D] px-3.5 py-2.5 rounded-xl text-xs font-mono-custom"
-              >
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                className="mb-4 px-3.5 py-2.5 rounded-xl text-xs font-mono-custom"
+                style={{ background: `${HH.pink}20`, border: `1px solid ${HH.pink}50`, color: HH.pink }}>
                 {errorMsg}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* State 1: Upload Dropzone & Quick Presets */}
+          {/* ── Upload State ── */}
           {!previewUrl ? (
-            <motion.div
-              key="upload-zone"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              className="space-y-4"
-            >
+            <motion.div key="upload" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+
+              {/* Dropzone */}
               <motion.div
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                animate={isDragOver ? { scale: 1.03, borderColor: '#F5A623', backgroundColor: 'rgba(10, 61, 74, 0.5)' } : {}}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
+                whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={() => setIsDragOver(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed ${
-                  isDragOver ? 'border-[#F5A623] bg-[#0A3D4A]/50' : 'border-[#F5A623]/40 bg-[#0A3D4A]/20'
-                } rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3 min-h-[220px] group`}
+                className="rounded-2xl border-2 border-dashed p-6 text-center cursor-pointer flex flex-col items-center gap-3 min-h-[200px] justify-center transition-all"
+                style={{ borderColor: isDragOver ? HH.yellow : `${HH.yellow}40`, background: isDragOver ? `${HH.yellow}12` : `${HH.greenMid}20` }}
               >
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/*,.heic,.heif"
-                  className="hidden"
-                />
+                {/* Hidden file inputs */}
+                {/* Primary: gallery/file picker (works on all platforms) */}
+                <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif" className="hidden" onChange={handleFile} />
 
                 {isProcessing ? (
-                  <div className="flex flex-col items-center gap-3 py-4">
-                    <div className="w-10 h-10 border-3 border-[#F5A623] border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-xs font-mono-custom text-[#F5A623]">Converting photo with HEIC engine...</p>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: `${HH.yellow}80`, borderTopColor: 'transparent' }} />
+                    <p className="text-xs font-mono-custom" style={{ color: HH.yellow }}>Converting photo…</p>
                   </div>
                 ) : (
                   <>
-                    <div className="w-14 h-14 rounded-full bg-[#0A3D4A]/60 flex items-center justify-center text-[#F5A623] border border-[#F5A623]/30 group-hover:scale-110 transition-transform duration-200 shadow-lg">
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center border group-hover:scale-110 transition-transform"
+                      style={{ background: `${HH.yellow}18`, borderColor: `${HH.yellow}40`, color: HH.yellow }}>
                       <Upload className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="font-display-custom font-bold text-base text-[#E8EAF0]">
-                        Drop your photo here
-                      </h3>
-                      <p className="font-mono-custom text-xs text-[#E8EAF0]/60 mt-1">
-                        or tap to browse (JPG, PNG, HEIC)
-                      </p>
+                      <p className="font-display-custom font-bold text-base" style={{ color: HH.cream }}>Drop photo or tap to browse</p>
+                      <p className="font-mono-custom text-xs mt-1" style={{ color: `${HH.cream}66` }}>JPG · PNG · HEIC (iPhone)</p>
                     </div>
                   </>
                 )}
               </motion.div>
 
-              {/* Instant Preset Avatars */}
-              <div className="pt-1">
-                <p className="text-[11px] font-mono-custom text-[#E8EAF0]/50 mb-2 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-[#F5A623]" />
-                  Or pick a 1-tap avatar preset:
+              {/* Mobile: separate "Camera" and "Gallery" buttons for iOS/Android */}
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button"
+                  onClick={() => {
+                    // On iOS/Android, `capture=environment` opens camera directly
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.setAttribute('capture', 'environment'); // rear camera
+                    input.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) { onImageSelected(f); boom(); } });
+                    input.click();
+                  }}
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl font-mono-custom text-xs font-bold border transition-all cursor-pointer"
+                  style={{ background: `${HH.greenMid}40`, borderColor: `${HH.yellow}30`, color: HH.yellow }}
+                >
+                  <Camera className="w-4 h-4" />
+                  Take Photo
+                </button>
+                <button type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl font-mono-custom text-xs font-bold border transition-all cursor-pointer"
+                  style={{ background: `${HH.greenMid}40`, borderColor: `${HH.yellow}30`, color: HH.yellow }}
+                >
+                  <ImageIcon className="w-4 h-4" />
+                  Choose from Gallery
+                </button>
+              </div>
+
+              {/* Preset Avatars */}
+              <div>
+                <p className="font-mono-custom text-[11px] mb-2 flex items-center gap-1" style={{ color: `${HH.cream}60` }}>
+                  <Sparkles className="w-3 h-3" style={{ color: HH.yellow }} />
+                  Or pick a 1-tap avatar:
                 </p>
                 <div className="grid grid-cols-3 gap-2">
-                  {PRESET_AVATARS.map((preset) => (
-                    <motion.button
-                      key={preset.id}
-                      whileHover={{ scale: 1.04 }}
-                      whileTap={{ scale: 0.96 }}
-                      type="button"
-                      onClick={() => handleSelectPreset(preset)}
-                      className="py-2 px-2 rounded-xl bg-white/5 border border-white/10 hover:border-[#F5A623] text-center cursor-pointer transition-all"
-                    >
-                      <div className={`w-8 h-8 rounded-full bg-gradient-to-tr ${preset.gradient} mx-auto flex items-center justify-center text-sm shadow-md mb-1`}>
-                        {preset.emoji}
+                  {PRESET_AVATARS.map(p => (
+                    <motion.button key={p.id} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button"
+                      onClick={() => handlePreset(p)}
+                      className="py-2 px-2 rounded-xl text-center cursor-pointer border transition-all"
+                      style={{ background: `${HH.greenMid}30`, borderColor: `${HH.yellow}25` }}>
+                      <div className="w-9 h-9 rounded-full mx-auto mb-1 flex items-center justify-center text-base shadow-md"
+                        style={{ background: `linear-gradient(135deg, ${p.g1}, ${p.g2})` }}>
+                        {p.emoji}
                       </div>
-                      <span className="block font-mono-custom text-[10px] text-[#E8EAF0]/80 truncate">
-                        {preset.name}
-                      </span>
+                      <span className="font-mono-custom text-[10px] truncate block" style={{ color: `${HH.cream}90` }}>{p.name}</span>
                     </motion.button>
                   ))}
                 </div>
               </div>
             </motion.div>
+
           ) : (
-            /* State 2: Wallet Card Live Preview & Controls */
-            <motion.div
-              key="pass-controls"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="space-y-4"
-            >
-              {/* Photo Card Preview Strip */}
-              <div className="flex items-center gap-4 bg-[#0A3D4A]/40 p-3 rounded-2xl border border-[#E8EAF0]/10 shadow-inner">
-                <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-[#F5A623] shrink-0 bg-[#0D0F1A] shadow-md">
-                  <img
-                    src={previewUrl}
-                    alt="Uploaded Photo"
-                    className="w-full h-full object-cover"
-                  />
+            /* ── Controls State ── */
+            <motion.div key="controls" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+
+              {/* Photo + name preview strip */}
+              <div className="flex items-center gap-3 p-3 rounded-2xl border" style={{ background: `${HH.greenMid}25`, borderColor: `${HH.yellow}20` }}>
+                <div className="w-14 h-14 rounded-full overflow-hidden border-2 shrink-0" style={{ borderColor: HH.yellow }}>
+                  <img src={previewUrl} alt="Your photo" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-display-custom font-bold text-sm text-[#E8EAF0] truncate">
-                    {name || 'YOUR NAME'}
-                  </h4>
-                  <p className="font-mono-custom text-xs text-[#F5A623] flex items-center gap-1 mt-0.5 truncate">
-                    <Sparkles className="w-3 h-3 shrink-0" />
-                    {getBuilderTitle(stack)}
-                  </p>
+                  <p className="font-display-custom font-bold text-sm truncate" style={{ color: HH.cream }}>{name || 'YOUR NAME'}</p>
+                  <p className="font-mono-custom text-xs mt-0.5 truncate" style={{ color: HH.yellow }}>✦ {getBuilderTitle(stack)}</p>
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-xs font-mono-custom text-[#E8EAF0]/60 hover:text-[#F5A623] p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
-                  title="Change photo"
-                >
+                <button type="button" onClick={() => fileInputRef.current?.click()}
+                  className="p-2 rounded-xl cursor-pointer transition-all"
+                  style={{ background: `${HH.yellow}18`, color: HH.yellow }}
+                  title="Change photo">
                   <Camera className="w-4 h-4" />
-                </motion.button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/*,.heic,.heif"
-                  className="hidden"
-                />
+                </button>
+                <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif" className="hidden" onChange={handleFile} />
               </div>
 
-              {/* Form Controls */}
-              <div className="space-y-3.5">
-                {/* Name Field */}
-                <div className="space-y-1">
-                  <label 
-                    htmlFor="builder-name" 
-                    className="block font-mono-custom text-[11px] font-bold text-[#F5A623] uppercase tracking-wider"
-                  >
-                    Your Name
-                  </label>
-                  <input
-                    id="builder-name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
-                    maxLength={30}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 font-mono-custom text-sm text-[#E8EAF0] focus:outline-none focus:border-[#F5A623] focus:ring-2 focus:ring-[#F5A623]/20 transition-all"
+              {/* Form fields */}
+              <div className="space-y-3">
+                {/* Name */}
+                <div>
+                  <label htmlFor="name-field" className="block font-mono-custom text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: HH.yellow }}>Your Name</label>
+                  <input id="name-field" type="text" value={name} onChange={e => setName(e.target.value)}
+                    placeholder="Enter your name" maxLength={30}
+                    className="w-full rounded-xl px-3.5 py-2.5 font-mono-custom text-sm border outline-none transition-all"
+                    style={{ background: `${HH.black}70`, borderColor: `${HH.yellow}30`, color: HH.cream,
+                      fontSize: '16px' /* prevents iOS zoom */ }}
+                    onFocus={e => e.target.style.borderColor = HH.yellow}
+                    onBlur={e => e.target.style.borderColor = `${HH.yellow}30`}
                   />
                 </div>
 
-                {/* Stack / Role Dropdown */}
-                <div className="space-y-1">
-                  <label 
-                    htmlFor="stack-select" 
-                    className="block font-mono-custom text-[11px] font-bold text-[#F5A623] uppercase tracking-wider"
-                  >
-                    Primary Stack / Role
-                  </label>
-                  <select
-                    id="stack-select"
-                    value={stack}
-                    onChange={(e) => setStack(e.target.value)}
-                    className="w-full bg-[#141824] border border-white/10 rounded-xl px-3.5 py-2.5 font-mono-custom text-sm text-[#E8EAF0] focus:outline-none focus:border-[#F5A623] focus:ring-2 focus:ring-[#F5A623]/20 transition-all cursor-pointer"
-                  >
-                    {STACK_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
+                {/* Stack */}
+                <div>
+                  <label htmlFor="stack-field" className="block font-mono-custom text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: HH.yellow }}>Stack / Role</label>
+                  <select id="stack-field" value={stack} onChange={e => setStack(e.target.value)}
+                    className="w-full rounded-xl px-3.5 py-2.5 font-mono-custom text-sm border outline-none cursor-pointer"
+                    style={{ background: HH.greenDark, borderColor: `${HH.yellow}30`, color: HH.cream, fontSize: '16px' }}>
+                    {STACK_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
 
-                {/* Fun Vibe Field */}
+                {/* Vibe (only for Builder Pass) */}
                 {cardMode === 'pass' && (
-                  <div className="space-y-1">
-                    <label 
-                      htmlFor="vibe-select" 
-                      className="block font-mono-custom text-[11px] font-bold text-[#00E5A0] uppercase tracking-wider"
-                    >
-                      Goa Hackathon Vibe ⚡
-                    </label>
-                    <select
-                      id="vibe-select"
-                      value={funVibe}
-                      onChange={(e) => setFunVibe(e.target.value)}
-                      className="w-full bg-[#141824] border border-white/10 rounded-xl px-3.5 py-2.5 font-mono-custom text-sm text-[#00E5A0] focus:outline-none focus:border-[#00E5A0] focus:ring-2 focus:ring-[#00E5A0]/20 transition-all cursor-pointer"
-                    >
-                      {FUN_VIBES.map((vibe) => (
-                        <option key={vibe.value} value={vibe.label}>
-                          {vibe.label}
-                        </option>
-                      ))}
+                  <div>
+                    <label htmlFor="vibe-field" className="block font-mono-custom text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: HH.pink }}>Goa Vibe ⚡</label>
+                    <select id="vibe-field" value={funVibe} onChange={e => setFunVibe(e.target.value)}
+                      className="w-full rounded-xl px-3.5 py-2.5 font-mono-custom text-sm border outline-none cursor-pointer"
+                      style={{ background: HH.greenDark, borderColor: `${HH.pink}40`, color: HH.pink, fontSize: '16px' }}>
+                      {FUN_VIBES.map(v => <option key={v.value} value={v.label}>{v.label}</option>)}
                     </select>
                   </div>
                 )}
 
-                {/* Export File Type Selector */}
-                <div className="space-y-1 pt-1">
-                  <label className="block font-mono-custom text-[11px] font-bold text-[#E8EAF0]/70 uppercase tracking-wider">
-                    Select Export Format
-                  </label>
+                {/* Export format */}
+                <div>
+                  <p className="font-mono-custom text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: `${HH.cream}70` }}>Export Format</p>
                   <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setFileFormat('png')}
-                      className={`py-2 px-2 rounded-xl font-mono-custom text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
-                        fileFormat === 'png'
-                          ? 'bg-[#F5A623]/20 border-2 border-[#F5A623] text-[#F5A623] shadow-md'
-                          : 'bg-white/5 border border-white/10 text-[#E8EAF0]/60 hover:text-[#E8EAF0]'
-                      }`}
-                    >
-                      <FileImage className="w-4 h-4" />
-                      PNG (.png)
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setFileFormat('jpeg')}
-                      className={`py-2 px-2 rounded-xl font-mono-custom text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
-                        fileFormat === 'jpeg'
-                          ? 'bg-[#F5A623]/20 border-2 border-[#F5A623] text-[#F5A623] shadow-md'
-                          : 'bg-white/5 border border-white/10 text-[#E8EAF0]/60 hover:text-[#E8EAF0]'
-                      }`}
-                    >
-                      <FileImage className="w-4 h-4" />
-                      JPG (.jpg)
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setFileFormat('ics')}
-                      className={`py-2 px-2 rounded-xl font-mono-custom text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
-                        fileFormat === 'ics'
-                          ? 'bg-[#00E5A0]/20 border-2 border-[#00E5A0] text-[#00E5A0] shadow-md'
-                          : 'bg-white/5 border border-white/10 text-[#E8EAF0]/60 hover:text-[#E8EAF0]'
-                      }`}
-                    >
-                      <Calendar className="w-4 h-4" />
-                      ICS (.ics)
-                    </button>
+                    {[
+                      { id: 'png',  label: 'PNG', icon: <FileImage className="w-4 h-4" /> },
+                      { id: 'jpeg', label: 'JPG', icon: <FileImage className="w-4 h-4" /> },
+                      { id: 'ics',  label: 'ICS', icon: <Calendar className="w-4 h-4" /> },
+                    ].map(f => (
+                      <button key={f.id} type="button" onClick={() => setFileFormat(f.id)}
+                        className="py-2.5 px-2 rounded-xl font-mono-custom text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer border-2"
+                        style={fileFormat === f.id
+                          ? { background: `${HH.yellow}25`, borderColor: HH.yellow, color: HH.yellow }
+                          : { background: 'transparent', borderColor: `${HH.cream}18`, color: `${HH.cream}55` }}>
+                        {f.icon}{f.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
             </motion.div>
           )}
 
-          {/* Footer Metadata */}
-          <div className="mt-5 pt-3 border-t border-[#E8EAF0]/10 flex items-center justify-between text-[11px] font-mono-custom text-[#E8EAF0]/40">
-            <span className="flex items-center gap-1.5">
-              <QrCode className="w-3.5 h-3.5 text-[#F5A623]" />
-              QR Credential Linked
-            </span>
-            <span className="text-[#FF5E4D] font-bold flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              #001
-            </span>
+          {/* Footer */}
+          <div className="mt-4 pt-3 border-t flex items-center justify-between font-mono-custom text-[11px]" style={{ borderColor: `${HH.yellow}18`, color: `${HH.cream}40` }}>
+            <span className="flex items-center gap-1.5"><QrCode className="w-3.5 h-3.5" style={{ color: HH.yellow }} />QR Credential Linked</span>
+            <span className="font-bold flex items-center gap-1" style={{ color: HH.pink }}><ShieldCheck className="w-3.5 h-3.5" />#001</span>
           </div>
         </motion.div>
 
-        {/* Action Buttons */}
+        {/* ── Action Buttons (appear after upload) ── */}
         <AnimatePresence>
           {previewUrl && (
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 15 }}
-              className="w-full mt-6 space-y-3"
-            >
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }}
+              className="w-full mt-5 space-y-3">
               <div className="flex flex-col sm:flex-row gap-3">
-                {/* Primary Download Button */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={onDownload}
-                  type="button"
-                  className="flex-1 bg-gradient-to-r from-[#F5A623] via-[#F5A623] to-[#FF5E4D] text-[#0D0F1A] font-display-custom font-extrabold text-sm py-3.5 px-5 rounded-xl shadow-xl shadow-[#F5A623]/25 flex items-center justify-center gap-2 cursor-pointer transition-all"
-                >
-                  {downloadSuccess ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      Downloaded .{fileFormat.toUpperCase()}!
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4" />
-                      Download .{fileFormat === 'jpeg' ? 'JPG' : fileFormat.toUpperCase()} File
-                    </>
-                  )}
+                {/* Download */}
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onDownload} type="button"
+                  className="flex-1 font-display-custom font-extrabold text-sm py-4 px-5 rounded-xl flex items-center justify-center gap-2 cursor-pointer"
+                  style={{ background: `linear-gradient(135deg, ${HH.yellow}, #F0D060)`, color: HH.greenDark, boxShadow: `0 8px 28px ${HH.yellow}45` }}>
+                  {downloadSuccess
+                    ? <><Check className="w-4 h-4" />Downloaded!</>
+                    : <><Download className="w-4 h-4" />Download .{fileFormat === 'jpeg' ? 'JPG' : fileFormat.toUpperCase()}</>
+                  }
                 </motion.button>
 
-                {/* Secondary Share on X Button */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={onShare}
-                  type="button"
-                  className="flex-1 bg-transparent border-2 border-white/20 hover:border-[#E8EAF0] text-[#E8EAF0] font-display-custom font-extrabold text-sm py-3.5 px-5 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all"
-                >
-                  <Share2 className="w-4 h-4" />
-                  Share on X
+                {/* Share */}
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onShare} type="button"
+                  className="flex-1 font-display-custom font-extrabold text-sm py-4 px-5 rounded-xl flex items-center justify-center gap-2 cursor-pointer border-2"
+                  style={{ background: 'transparent', borderColor: `${HH.cream}35`, color: HH.cream }}>
+                  <Share2 className="w-4 h-4" />Share on X
                 </motion.button>
               </div>
 
-              {/* View/Open Image in New Tab Option (Alternative for Mac Safari/Chrome) */}
+              {/* Open in new tab link */}
               {fileFormat !== 'ics' && (
-                <div className="text-center pt-1">
-                  <button
-                    type="button"
-                    onClick={onOpenInNewTab}
-                    className="inline-flex items-center gap-1.5 text-xs font-mono-custom text-[#F5A623] hover:underline transition-colors py-1 px-3 rounded-lg cursor-pointer"
-                  >
+                <div className="text-center">
+                  <button type="button" onClick={onOpenInNewTab}
+                    className="inline-flex items-center gap-1.5 font-mono-custom text-xs cursor-pointer underline underline-offset-2"
+                    style={{ color: HH.yellow }}>
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Open Image in New Tab (View/Save Directly)
+                    Open full image in new tab (right-click to save)
                   </button>
                 </div>
               )}
 
-              {/* Start Over Button */}
-              <div className="text-center pt-1">
-                <button
-                  type="button"
-                  onClick={onReset}
-                  className="inline-flex items-center gap-1.5 text-xs font-mono-custom text-[#E8EAF0]/50 hover:text-[#F5A623] transition-colors py-1 px-3 rounded-lg cursor-pointer"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  Start over with new photo
+              {/* Reset */}
+              <div className="text-center">
+                <button type="button" onClick={onReset}
+                  className="inline-flex items-center gap-1.5 font-mono-custom text-xs cursor-pointer"
+                  style={{ color: `${HH.cream}50` }}>
+                  <RefreshCw className="w-3.5 h-3.5" />Start over
                 </button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+
       </motion.div>
     </main>
   );

@@ -1,34 +1,48 @@
 @import "tailwindcss";
 
+/* HH Goa 2026 Official Theme — exact brand colors */
 @theme {
-  --color-night: #0D0F1A;
-  --color-card-bg: #141824;
-  --color-deep-teal: #0A3D4A;
-  --color-brand-gold: #F5A623;
-  --color-brand-coral: #FF5E4D;
-  --color-brand-mint: #00E5A0;
-  --color-text-fog: #E8EAF0;
+  /* HH Goa exact brand */
+  --color-hh-green:      #0b6839;
+  --color-hh-green-dark: #084d2a;
+  --color-hh-green-mid:  #0d7d44;
+  --color-hh-yellow:     #fee101;
+  --color-hh-pink:       #E8357A;
+  --color-hh-black:      #0F0F0F;
+  --color-hh-cream:      #F5F0E0;
 
   --font-display: 'Space Grotesk', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
 :root {
-  --bg-night: #0D0F1A;
-  --bg-card: #141824;
-  --brand-gold: #F5A623;
-  --brand-coral: #FF5E4D;
-  --brand-mint: #00E5A0;
-  --text-fog: #E8EAF0;
+  --hh-green:      #0b6839;
+  --hh-green-dark: #084d2a;
+  --hh-yellow:     #fee101;
+  --hh-pink:       #E8357A;
+  --hh-black:      #0F0F0F;
+  --hh-cream:      #F5F0E0;
 }
 
+* { box-sizing: border-box; }
+
 body {
-  background-color: #0D0F1A;
-  color: #E8EAF0;
+  background-color: #084d2a;
+  color: #F5F0E0;
   font-family: 'Space Grotesk', sans-serif;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  min-height: 100vh;
+  /* Mobile-safe */
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+/* Mobile viewport fix */
+@supports (height: 100dvh) {
+  body {
+    min-height: 100dvh;
+  }
 }
 
 .font-mono-custom {
@@ -38,3 +52,14 @@ body {
 .font-display-custom {
   font-family: 'Space Grotesk', sans-serif;
 }
+
+/* Mobile-friendly tap target */
+button, input[type="file"] + label, select {
+  min-height: 44px;
+}
+
+/* Prevent iOS zoom on input focus */
+input, select, textarea {
+  font-size: 16px;
+}
+
