@@ -2,7 +2,6 @@
 
 /* HH Goa 2026 Official Theme — exact brand colors */
 @theme {
-  /* HH Goa exact brand */
   --color-hh-green:      #0b6839;
   --color-hh-green-dark: #084d2a;
   --color-hh-green-mid:  #0d7d44;
@@ -62,4 +61,3 @@ button, input[type="file"] + label, select {
 input, select, textarea {
   font-size: 16px;
 }
-
